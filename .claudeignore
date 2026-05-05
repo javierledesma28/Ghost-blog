@@ -1,0 +1,15 @@
+# Datos de runtime — no leer
+mysql-data/
+ghost-content/
+backups/
+
+# Secretos
+.env
+.env.save
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
