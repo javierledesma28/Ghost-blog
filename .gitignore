@@ -9,6 +9,9 @@ mysql-data/
 ghost-content/
 backups/
 
+# Claude local
+.claude/settings.local.json
+
 # OS/editor
 .DS_Store
 Thumbs.db
