@@ -5,8 +5,6 @@ services:
     restart: unless-stopped
     depends_on:
       - ghost-db
-    ports:
-      - "2368:2368"
     environment:
       url: ${GHOST_URL}
       database__client: mysql
@@ -30,6 +28,18 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - ./mysql-data:/var/lib/mysql
+    networks:
+      - ghost-net
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: ghost-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    depends_on:
+      - ghost
     networks:
       - ghost-net
 
