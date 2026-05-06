@@ -39,15 +39,78 @@ def esc_sql(s):
 
 # ── CSS ────────────────────────────────────────────────────────────────────────
 CSS = """<style id="pmq-css">
-#pmq-root{display:block!important;width:100%!important;background:#0f0f0f;padding:60px 0;overflow:hidden;box-sizing:border-box}
+/* ── Override variable raíz de Ghost ── */
+:root{--background-color:#0f0f0f!important}
+/* ── Fondo global ── */
+html,body{background:#0f0f0f!important;color:#e0e0e0!important}
+.gh-viewport,.gh-main,.gh-outer,.gh-inner,.gh-container,.gh-article,.gh-content,
+.gh-head,.gh-foot,.gh-canvas,.gh-hero,.gh-hero-inner,.gh-header,.gh-header-inner,
+.gh-cta,.gh-cta-inner,.gh-cta-wrapper,
+section,header,footer,main{background:#0f0f0f!important}
+.gh-hero::before,.gh-hero::after,
+.gh-cta::before,.gh-cta::after,
+.gh-header::before,.gh-header::after{background:#0f0f0f!important}
+
+/* ── Navegación ── */
+.gh-navigation,.gh-navigation-inner,.gh-navigation-brand{background:#0f0f0f!important}
+.gh-navigation-logo{color:#fff!important}
+.gh-navigation-menu a{color:#aaa!important}
+.gh-navigation-menu a:hover{color:#fff!important}
+.gh-navigation-actions a,.gh-navigation-members a{color:#aaa!important}
+.gh-navigation-actions a:hover,.gh-navigation-members a:hover{color:#fff!important}
+.gh-navigation svg,.gh-navigation-actions svg{color:#aaa!important;fill:#aaa!important}
+
+/* ── Hero / CTA ── */
+.gh-hero-title,.gh-hero h1,.gh-hero h2{color:#fff!important}
+.gh-hero-description,.gh-hero p{color:#888!important}
+.gh-cta-title{color:#fff!important}
+.gh-cta-description{color:#888!important}
+
+/* ── Tarjetas de posts (lista) ── */
+.gh-card{background:transparent!important;border:none!important;box-shadow:none!important}
+.gh-card-link:hover .gh-card-title{color:#fff!important}
+.gh-card-title{color:#e8e8e8!important;font-weight:600!important}
+.gh-card-excerpt{color:#888!important}
+.gh-card-meta,.gh-card-meta *,.gh-card-footer,.gh-card-footer *{color:#555!important}
+
+/* ── Imágenes de post: sin box de fondo ── */
+.gh-card-image,.gh-card-image-wrapper{background:#1a1a1a!important;border-radius:8px!important;overflow:hidden!important}
+
+/* ── Featured posts ── */
+.gh-featured-card{background:#141414!important;border:1px solid #1e1e1e!important;border-radius:12px!important}
+.gh-featured-title{color:#fff!important}
+
+/* ── Footer ── */
+.gh-footer,.gh-footer-inner{background:#0f0f0f!important}
+.gh-footer-logo{color:#fff!important}
+.gh-footer-signup-header{color:#fff!important}
+.gh-footer-signup-subhead{color:#888!important}
+.gh-footer-menu a{color:#aaa!important}
+.gh-footer-menu a:hover{color:#fff!important}
+.gh-footer-copyright,.gh-footer-copyright a{color:#555!important}
+.gh-footer-bar,.gh-footer-bar *{color:#555!important}
+[class*="gh-powered"],[class*="gh-powered"] *{color:#555!important}
+
+/* ── Separadores ── */
+hr,.gh-divider{border-color:#1e1e1e!important}
+
+/* ── About: ocultar título "About this site" ── */
+.page-about .gh-article-title{display:none!important}
+
+/* ── See all → mismo color que LATEST ── */
+.gh-more a,.gh-more a *{color:#e8e8e8!important}
+.gh-more a:hover,.gh-more a:hover *{color:#fff!important}
+
+/* ── Post feed: solo 3 items ── */
+.gh-feed .gh-card:nth-child(n+4),
+.gh-postfeed .gh-card:nth-child(n+4){display:none!important}
+.gh-feed-seeall,.gh-pagenavigation,.view-all{display:none!important}
+
+/* ── Marquee ── */
+#pmq-root{display:block!important;width:100%!important;background:#0f0f0f;padding:40px 0 60px;overflow:hidden;box-sizing:border-box}
 .pmq-header{text-align:center;margin-bottom:40px;padding:0 24px}
-.pmq-label{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a855f7;margin-bottom:12px;font-family:sans-serif}
-.pmq-title{font-size:40px;font-weight:700;color:#fff;margin:0 0 10px;line-height:1.2;font-family:sans-serif}
-.pmq-sub{font-size:15px;color:#888;margin:0 auto 24px;max-width:480px;font-family:sans-serif}
-.pmq-btn{display:inline-flex;align-items:center;gap:8px;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 22px;color:#fff!important;font-size:14px;font-weight:500;text-decoration:none!important;font-family:sans-serif}
-.pmq-btn:hover{background:#222;border-color:#555}
 /* Filas marquee */
-.pmq-rows{width:100%;overflow:hidden;display:flex;flex-direction:column;gap:16px;-webkit-mask-image:linear-gradient(to right,transparent,black 8%,black 92%,transparent);mask-image:linear-gradient(to right,transparent,black 8%,black 92%,transparent)}
+.pmq-rows{width:100%;overflow:hidden;display:flex;flex-direction:column;gap:16px;-webkit-mask-image:linear-gradient(to right,transparent 0%,black 8%,black 92%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 12%,black 88%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent 0%,black 8%,black 92%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 12%,black 88%,transparent 100%);mask-composite:intersect}
 .pmq-rows:hover .pmq-track{animation-play-state:paused!important}
 .pmq-row{overflow:hidden;padding:4px 0}
 .pmq-track{display:flex;flex-direction:row;gap:16px;animation:marquee-left var(--dur,35s) linear infinite;will-change:transform}
@@ -59,9 +122,16 @@ CSS = """<style id="pmq-css">
 .pmq-card-top{display:flex;align-items:center;margin-bottom:12px}
 .pmq-card-name{font-size:13px;font-weight:600}
 .pmq-card-date{font-size:11px;color:#666;margin-left:auto}
-.pmq-card-text{font-size:13px;color:#bbb;line-height:1.5;margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pmq-card-text{font-size:13px;color:#bbb;line-height:1.5;margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-align:center!important}
 @keyframes marquee-left{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @keyframes marquee-right{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+
+/* ── Post nav arrows ── */
+.pnav-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:999;display:flex;align-items:center;justify-content:center;width:32px;height:80px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#aaa;cursor:pointer;text-decoration:none!important;transition:background .2s,border-color .2s,color .2s,opacity .2s;opacity:0.5}
+.pnav-arrow:hover{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.25);color:#fff;opacity:1}
+.pnav-arrow.pnav-prev{left:12px}
+.pnav-arrow.pnav-next{right:12px}
+.pnav-arrow svg{width:18px;height:18px;flex-shrink:0}
 </style>"""
 
 # ── JS ─────────────────────────────────────────────────────────────────────────
@@ -111,17 +181,18 @@ FOOT = f"""<script>
 
   root.innerHTML=
     '<div class="pmq-header">'
-    +'<span class="pmq-label">✦ Blog</span>'
     +'<h2 class="pmq-title">Explorá todos los posts</h2>'
-    +'<p class="pmq-sub">Azure, IA, redes, IoT, scripting y más.</p>'
-    +'<a class="pmq-btn" href="'+GU+'">→ Ver todos los posts</a>'
     +'</div>'
     +'<div id="pmq-rows"></div>';
+
+  var limit=parseInt(root.getAttribute('data-limit')||'0',10)||0;
+  var numRows=parseInt(root.getAttribute('data-rows')||'4',10)||4;
 
   fetch(GU+'/ghost/api/content/posts/?key='+KEY+'&limit=all&include=tags&fields=title,slug,feature_image,published_at')
     .then(function(r){{return r.json();}})
     .then(function(j){{
       var all=(j.posts||[]).filter(function(p){{return p.slug!=='coming-soon';}});
+      if(limit>0)all=all.slice(0,limit);
       if(!all.length)return;
       var rows=document.getElementById('pmq-rows');
       if(!rows)return;
@@ -133,14 +204,52 @@ FOOT = f"""<script>
         }}
         return a;
       }}
-      rows.appendChild(buildRow(shuffle(all,1),false));
-      rows.appendChild(buildRow(shuffle(all,2),true));
-      rows.appendChild(buildRow(shuffle(all,3),false));
-      rows.appendChild(buildRow(shuffle(all,4),true));
+      var dirs=[false,true,false,true];
+      for(var i=0;i<numRows;i++){{
+        rows.appendChild(buildRow(shuffle(all,i+1),dirs[i%2]));
+      }}
     }})
     .catch(function(e){{
       var rows=document.getElementById('pmq-rows');
       if(rows)rows.innerHTML='<p style="color:#666;text-align:center;padding:20px">'+e+'</p>';
+    }});
+}})();
+
+/* ── Post navigation arrows ── */
+(function(){{
+  if(!document.body.classList.contains('post-template'))return;
+  var GU='{GHOST_URL}',KEY='{CONTENT_KEY}';
+  var slug=window.location.pathname.replace(/[\/]/g,'');
+  if(!slug)return;
+
+  fetch(GU+'/ghost/api/content/posts/?key='+KEY+'&limit=all&fields=slug,title&order=published_at%20desc')
+    .then(function(r){{return r.json();}})
+    .then(function(j){{
+      var posts=(j.posts||[]).filter(function(p){{return p.slug!=='coming-soon';}});
+      var idx=posts.findIndex(function(p){{return p.slug===slug;}});
+      if(idx<0)return;
+
+      var svgL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+      var svgR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+      if(idx+1 < posts.length){{
+        var older=posts[idx+1];
+        var a=document.createElement('a');
+        a.className='pnav-arrow pnav-prev';
+        a.href=GU+'/'+older.slug+'/';
+        a.title=older.title;
+        a.innerHTML=svgL;
+        document.body.appendChild(a);
+      }}
+      if(idx-1 >= 0){{
+        var newer=posts[idx-1];
+        var b=document.createElement('a');
+        b.className='pnav-arrow pnav-next';
+        b.href=GU+'/'+newer.slug+'/';
+        b.title=newer.title;
+        b.innerHTML=svgR;
+        document.body.appendChild(b);
+      }}
     }});
 }})();
 </script>"""
