@@ -1,0 +1,292 @@
+<!--
+  POST MARQUEE — componente standalone para previsualización.
+  Este archivo se usa para desarrollo/testing.
+  El contenido final se inyecta en Ghost via codeinjection_foot en la DB.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Post Marquee Preview</title>
+<style>
+  body { background: #0f0f0f; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+</style>
+</head>
+<body>
+<div id="marquee-root"></div>
+<script>
+const GHOST_URL = 'https://blog.javierledesma.com.ar';
+const CONTENT_KEY = '9d053295e3096a4e81b30910d7';
+
+const TAG_COLORS = {
+  'azure':        '#0078D4',
+  'ia':           '#7B2FBE',
+  'lvl100':       '#22c55e',
+  'lvl200':       '#eab308',
+  'lvl300':       '#ef4444',
+  'noticias':     '#f97316',
+  'arquitectura': '#06b6d4',
+  'networking':   '#3b82f6',
+  'iot':          '#84cc16',
+  'electronica':  '#a78bfa',
+  'natural':      '#10b981',
+  'scripting':    '#f59e0b',
+  'seguridad':    '#ec4899',
+  'google':       '#34d399',
+  'soft skills':  '#fb7185',
+  'default':      '#6366f1'
+};
+
+function tagColor(tagName) {
+  const key = (tagName || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+  return TAG_COLORS[key] || TAG_COLORS['default'];
+}
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('es-AR', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function buildCard(post) {
+  const tag     = post.tags && post.tags[0] ? post.tags[0] : { name: 'Blog', slug: 'blog' };
+  const color   = tagColor(tag.name);
+  const excerpt = post.excerpt ? post.excerpt.slice(0, 100) + (post.excerpt.length > 100 ? '…' : '') : '';
+  const title   = post.title.length > 60 ? post.title.slice(0, 60) + '…' : post.title;
+  const initials = tag.name.slice(0, 2).toUpperCase();
+
+  // gradient fallback si no hay feature image
+  const imgStyle = post.feature_image
+    ? `background-image:url('${post.feature_image}');background-size:cover;background-position:center;`
+    : `background:linear-gradient(135deg, ${color}22, ${color}55);`;
+
+  return `
+  <a class="mq-card" href="${GHOST_URL}/${post.slug}/" target="_blank">
+    <div class="mq-card-top">
+      <div class="mq-avatar" style="${imgStyle}">
+        ${!post.feature_image ? `<span class="mq-initials">${initials}</span>` : ''}
+      </div>
+      <div class="mq-meta">
+        <span class="mq-tag" style="color:${color};border-color:${color}33;background:${color}11">${tag.name}</span>
+        <span class="mq-date">${formatDate(post.published_at)}</span>
+      </div>
+    </div>
+    <p class="mq-title">${title}</p>
+    <p class="mq-excerpt">${excerpt}</p>
+  </a>`;
+}
+
+async function fetchPosts() {
+  const url = `${GHOST_URL}/ghost/api/content/posts/?key=${CONTENT_KEY}&limit=all&include=tags&fields=title,slug,excerpt,feature_image,published_at,tags`;
+  const res = await fetch(url);
+  const json = await res.json();
+  return json.posts || [];
+}
+
+function chunkArray(arr, size) {
+  const chunks = [];
+  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+  return chunks;
+}
+
+function buildRow(el, posts, direction, duration) {
+  const inner = document.createElement('div');
+  inner.className = 'mq-track';
+  inner.innerHTML = posts.map(buildCard).join('');
+  el.appendChild(inner);
+  // duplicar para loop seamless
+  const clone = inner.cloneNode(true);
+  clone.setAttribute('aria-hidden', 'true');
+  el.appendChild(clone);
+
+  const keyName = `mq-${direction}-${duration}`;
+  if (!document.querySelector(`style[data-mq="${keyName}"]`)) {
+    const style = document.createElement('style');
+    style.setAttribute('data-mq', keyName);
+    const from = direction === 'left' ? '0%' : '-50%';
+    const to   = direction === 'left' ? '-50%' : '0%';
+    style.textContent = `
+      @keyframes ${keyName} {
+        from { transform: translateX(${from}); }
+        to   { transform: translateX(${to}); }
+      }`;
+    document.head.appendChild(style);
+  }
+  el.style.setProperty('--mq-anim', keyName);
+  el.style.setProperty('--mq-dur', duration + 's');
+}
+
+function inject() {
+  const root = document.getElementById('marquee-root');
+  if (!root) return;
+
+  root.innerHTML = `
+  <style>
+    .mq-section {
+      background: #0f0f0f;
+      padding: 60px 0 80px;
+      overflow: hidden;
+    }
+    .mq-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .mq-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 999px;
+      padding: 10px 22px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background .2s, border-color .2s;
+    }
+    .mq-btn:hover { background: #222; border-color: #3a3a3a; }
+    .mq-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%);
+      mask-image:         linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%);
+    }
+    .mq-wrapper:hover .mq-row {
+      animation-play-state: paused !important;
+    }
+    .mq-row {
+      display: flex;
+      width: max-content;
+      animation: var(--mq-anim) var(--mq-dur) linear infinite;
+    }
+    .mq-track {
+      display: flex;
+      gap: 14px;
+      padding: 4px 7px;
+    }
+    .mq-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 280px;
+      flex-shrink: 0;
+      background: #1a1a1a;
+      border: 0.5px solid #2a2a2a;
+      border-radius: 14px;
+      padding: 16px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color .2s, transform .2s;
+      cursor: pointer;
+    }
+    .mq-card:hover {
+      border-color: #3a3a3a;
+      transform: translateY(-2px);
+    }
+    .mq-card-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .mq-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .mq-initials {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .5px;
+    }
+    .mq-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .mq-tag {
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid;
+      border-radius: 4px;
+      padding: 1px 6px;
+      width: fit-content;
+      white-space: nowrap;
+      letter-spacing: .3px;
+    }
+    .mq-date {
+      font-size: 11px;
+      color: #555;
+    }
+    .mq-title {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #e8e8e8;
+      line-height: 1.45;
+    }
+    .mq-excerpt {
+      margin: 0;
+      font-size: 12px;
+      color: #888;
+      line-height: 1.6;
+    }
+  </style>
+
+  <section class="mq-section">
+    <div class="mq-header">
+      <a class="mq-btn" href="${GHOST_URL}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="#5865F2"/>
+        </svg>
+        Explorá todos los posts
+      </a>
+    </div>
+    <div class="mq-wrapper" id="mqWrapper"></div>
+  </section>`;
+}
+
+async function init() {
+  inject();
+  const posts = await fetchPosts();
+  if (!posts.length) return;
+
+  // Filtrar "Coming soon" y mezclar
+  const valid = posts.filter(p => p.slug !== 'coming-soon');
+  // Shufflear para variedad entre filas
+  const shuffled = [...valid].sort(() => Math.random() - .5);
+
+  // Distribuir posts en 3 grupos (con repetición si hay pocos)
+  function getGroup(seed) {
+    const arr = [];
+    while (arr.length < Math.max(8, valid.length)) arr.push(...valid);
+    return arr.sort(() => (Math.random() + seed) - .5).slice(0, Math.max(8, valid.length));
+  }
+
+  const rows = [
+    { id: 'mqRow1', dir: 'left',  dur: 35, posts: getGroup(0.1) },
+    { id: 'mqRow2', dir: 'right', dur: 28, posts: getGroup(0.5) },
+    { id: 'mqRow3', dir: 'left',  dur: 40, posts: getGroup(0.9) },
+  ];
+
+  const wrapper = document.getElementById('mqWrapper');
+  rows.forEach(({ id, dir, dur, posts: rPosts }) => {
+    const row = document.createElement('div');
+    row.className = 'mq-row';
+    row.id = id;
+    wrapper.appendChild(row);
+    buildRow(row, rPosts, dir, dur);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

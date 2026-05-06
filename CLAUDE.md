@@ -63,6 +63,8 @@ python3 migrate_images.py
 - `insert_post.py` → función reutilizable para insertar posts directamente en MySQL
 - `insert_all_posts.py` → migración masiva: los 17 posts del blog original
 - `migrate_images.py` → descarga imágenes externas y actualiza URLs en DB
+- `inject_marquee.py` → inyecta CSS + JS del Post Marquee en la DB de Ghost
+- `post-marquee.html` → versión standalone para desarrollo/preview del componente
 
 ## Scripts de Migración
 ### insert_post.py / insert_all_posts.py
@@ -105,6 +107,54 @@ insert_post(
 - La red `ghost-net` es interna al compose; cloudflared resuelve `ghost-blog` por nombre de contenedor
 - Las imágenes del blog se guardan en `ghost-content/images/migrated/` (no commiteado)
 
+## Post Marquee — Componente de Showcase
+
+Componente estilo Supabase "Join the community" con filas horizontales animadas mostrando los posts del blog.
+
+### Arquitectura
+- **CSS** inyectado en `codeinjection_head` de Ghost (via DB)
+- **JS** inyectado en `codeinjection_foot` de Ghost (via DB)
+- **Anchor HTML** `<div id="pmq-root"></div>` hardcodeado en el template del tema
+
+### Template modificado
+```
+/var/lib/ghost/current/content/themes/source/home.hbs
+```
+> **Importante:** `ghost-content/themes/source` es un **symlink** a `/var/lib/ghost/current/content/themes/source`. Siempre editar via `docker exec ghost-blog` usando la ruta `/var/lib/ghost/...`
+
+```handlebars
+{{> "components/cta"}}
+{{!-- Post Marquee --}}
+<div id="pmq-root"></div>
+{{> "components/post-list" ...}}
+```
+
+El `<div id="pmq-root">` debe estar como **sibling directo** de `section.gh-container` (fuera del grid interno). Si se inserta dentro de `.gh-container-inner.gh-inner` (12-column CSS grid), el componente aparece en una columna estrecha.
+
+### Ejecutar
+```bash
+python3 inject_marquee.py
+```
+
+### Diseño
+- 4 filas horizontales: odd=izquierda (35s), even=derecha (28s)
+- Cards 300px: fondo `#1c1c1c`, borde `#2e2e2e`, avatar circular, tag con color por categoría, título del post
+- Fade mask izquierda/derecha con `mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent)`
+- Hover pausa todas las animaciones
+- Shuffle seeded para distinto orden por fila
+
+### Content API
+```
+GET /ghost/api/content/posts/?key=KEY&limit=all&include=tags&fields=title,slug,feature_image,published_at
+```
+⚠️ `tags` va en `include=` (es una relación), **NO** en `fields=`. Si se pone en `fields=` da `ER_BAD_FIELD_ERROR`.
+
+### Lecciones aprendidas
+- **DOMContentLoaded nunca dispara** en `codeinjection_foot`: el script se ejecuta después de que el evento ya se emitió. El código debe ejecutarse **inmediatamente**, sin listener de eventos.
+- **CSS animation name via variable no funciona**: `animation: var(--anim-name) var(--dur)` era poco confiable. Usar nombres de clase directos: `.pmq-track { animation-name: marquee-left }` y `.pmq-track.reverse { animation-name: marquee-right }`.
+- **Ghost usa `home.hbs`, no `index.hbs`** para la homepage. `index.hbs` es para el archivo de posts.
+- **Tema activo es `source`**, no `casper`. Verificar con `curl` en el HTML generado.
+
 ## Decisiones Técnicas Clave
 - **Insert directo a MySQL** en lugar de Admin API — más confiable, sin problemas de caché
 - **Charset:** `--default-character-set=utf8mb4` + `encoding='utf-8'` en subprocess para correcta codificación del español
@@ -119,6 +169,7 @@ insert_post(
 ## Pendiente
 - Proteger `/ghost` (admin) con Cloudflare Access — política de email OTP o Google SSO
 - Crear MCP Server `ghost-blog` para gestión de posts (ver repo `my-mcp-servers`)
+- Mejoras al Post Marquee (base funcional en producción)
 
 ## Próximo Paso
 Desarrollo de MCP Server propio para gestión de posts en Ghost y otros proyectos.
@@ -127,5 +178,6 @@ Ver: https://github.com/javierledesma28/my-mcp-servers (pendiente de crear)
 ## Trabajo Activo ← ACTUALIZAR FRECUENTEMENTE
 - Estado: **Producción** — blog live en https://blog.javierledesma.com.ar
 - Migración: **Completa** — 19 posts + 26 imágenes locales (mayo 2026)
+- Post Marquee: **✅ Funcionando** — componente horizontal estilo Supabase en homepage (mayo 2026)
 - Repo: https://github.com/javierledesma28/Ghost-blog
 - Notion: https://www.notion.so/Blog-javierledesma-com-ar-3586c5f682d8803c80d9f3149b5b600e
